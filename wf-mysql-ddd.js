@@ -111,6 +111,7 @@ var ddd = {
         conn.on("error", err => {
             console.log(err);
             conn.end();
+            p.callback(err);
         });
         conn.end();
     }
@@ -145,7 +146,8 @@ api.get('/:sp', function(req, res) {
         conn: ddd.conn,
         sp: req.params.sp,
         token: req.cookies["token"],
-        data: req.body.data,
+        //data: req.body.data,
+        data:req.body,
         callback: function(r) {
             res.set('content-type', 'application/json');
             res.send(r);

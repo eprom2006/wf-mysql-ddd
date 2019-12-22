@@ -1,0 +1,10 @@
+doctype html
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/main.css')
+  body
+    h2 API List
+    each val,index in apies
+        h3 /api/#{val.api}
+        p=val.comment
