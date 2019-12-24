@@ -14,12 +14,18 @@ wf-mysql-ddd
 ``` javascript
 
 module.exports={
-    mysql:{
-
+    mysql: {
+        host: "xxx.xxx.xxx.xxx",
+        database: "xxx",
+        user: "root",
+        password: "xxxx",
+        port: '3306'
     },
-    redis:{
-        
-    }
+    redis: {
+        host: "xxx.xxx.xxx.xxx",
+        port: "6379",
+        password: "xxx"
+    },
 }
 
 ```
