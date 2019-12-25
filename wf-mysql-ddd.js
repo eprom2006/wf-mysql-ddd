@@ -81,8 +81,11 @@ var ddd = {
                 let cmd = 'select ?,? into @token,@jdata;call ddd_' + p.sp + '(@token,@jdata);select @jdata as jdata;';
                 conn.query(cmd, [token, jdata], function(err, result, fields) {
                     if (!err) {
-                        if (result[2][0].jdata !== undefined) {
-                            var r = JSON.parse(result[2][0].jdata);
+                        let last = result.length - 1;
+                        //console.log(last);
+                        //console.log(result[last]);
+                        if (result[last][0].jdata !== undefined) {
+                            var r = JSON.parse(result[last][0].jdata);
                             p.callback(null, r);
                         } else {
                             p.callback(404, {
@@ -171,7 +174,7 @@ api.get('/:sp', function(req, res, next) {
             //     r: r
             // });
             if (err) {
-                res.status(err, r);
+                res.status(err);
                 res.send(r);
             } else {
                 res.set('content-type', 'application/json');
@@ -193,7 +196,7 @@ api.get('/:sp', function(req, res, next) {
             //     r: r
             // });
             if (err) {
-                res.status(err, r);
+                res.status(err);
                 res.send(r);
             } else {
                 res.set('content-type', 'application/json');
