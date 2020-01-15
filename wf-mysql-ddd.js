@@ -3,6 +3,8 @@ var api = express.Router();
 const mysql = require("mysql");
 const redis = require('redis');
 var pool = null;
+var client = null;
+
 
 
 function createPool(options) {
@@ -43,17 +45,21 @@ var ddd = {
 
             if (p.token) {
                 //console.log(p);
-
-                var client = redis.createClient(ddd.redis);
-                client.on("error", function(err) {
-                    //console.log("Error " + err);
-                    p.callback(500, {
-                        err_code: 3,
-                        message: "redis error"
+                if (!client) {
+                    client = redis.createClient(ddd.redis);
+                    client.on("error", function(err) {
+                        //console.log("Error " + err);
+                        // p.callback(500, {
+                        //     err_code: 3,
+                        //     message: "redis error"
+                        // });
                     });
-                });
+                }
+                //var client = redis.createClient(ddd.redis);
+
                 client.get("token." + p.token, function(err, jtoken) {
                     if (!err && jtoken) {
+                        client.expire("token." + p.token, 1200); //如果有访问，则自动延长token过期时间20分钟。
                         do_query(jtoken, JSON.stringify(p.data));
                     } else {
                         p.callback(403, {
@@ -68,13 +74,13 @@ var ddd = {
             }
 
             conn.on("error", err => {
-                p.callback(
-                    500, {
-                        err_code: 5,
-                        err_message: err.sqlMessage
-                    }
-                );
-                conn.release();
+                // p.callback(
+                //     500, {
+                //         err_code: 5,
+                //         err_message: err
+                //     }
+                // );
+                // conn.release();
             });
 
             function do_query(token, jdata) {
@@ -196,8 +202,13 @@ api.get('/:sp', function(req, res, next) {
             //     r: r
             // });
             if (err) {
+                console.log({
+                    err: err,
+                    r: r
+                })
+                res.set('content-type', 'application/json');
                 res.status(err);
-                res.send(r);
+                res.send(JSON.stringify(r));
             } else {
                 res.set('content-type', 'application/json');
                 res.send(r);
