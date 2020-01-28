@@ -3,9 +3,16 @@ var api = express.Router();
 const mysql = require("mysql");
 const redis = require('redis');
 var pool = null;
-var client = null;
+var redis_client = null;
 
 
+// if (!config.conn) {
+//     throw new Error("mysql connection not exists");
+// }
+
+// if (config.redis) {
+//     throw new Error("redis config not exists");
+// }
 
 function createPool(options) {
     pool = mysql.createPool(options);
@@ -41,76 +48,53 @@ var ddd = {
             createPool(p.conn)
         };
 
-        pool.getConnection(function(err, conn) {
+        //检查redis client是否创建
+        if (!redis_client) { redis_client = redis.createClient(ddd.redis); };
+        if (p.token) {
 
-            if (p.token) {
-                //console.log(p);
-                if (!client) {
-                    client = redis.createClient(ddd.redis);
-                    client.on("error", function(err) {
-                        //console.log("Error " + err);
-                        // p.callback(500, {
-                        //     err_code: 3,
-                        //     message: "redis error"
-                        // });
+            redis_client.get("token." + p.token, function(err, jtoken) {
+
+                if (!err && jtoken) {
+                    redis_client.expire("token." + p.token, 1200); //如果有访问，则自动延长token过期时间20分钟。
+                    do_query(jtoken, JSON.stringify(p.data));
+                } else {
+                    p.callback(403, {
+                        err_code: 4,
+                        err_message: "token无效"
                     });
                 }
-                //var client = redis.createClient(ddd.redis);
-
-                client.get("token." + p.token, function(err, jtoken) {
-                    if (!err && jtoken) {
-                        client.expire("token." + p.token, 1200); //如果有访问，则自动延长token过期时间20分钟。
-                        do_query(jtoken, JSON.stringify(p.data));
-                    } else {
-                        p.callback(403, {
-                            err_code: 4,
-                            err_message: "token无效"
-                        });
-                    }
-                });
-
-            } else {
-                do_query("{}", JSON.stringify(p.data));
-            }
-
-            conn.on("error", err => {
-                // p.callback(
-                //     500, {
-                //         err_code: 5,
-                //         err_message: err
-                //     }
-                // );
-                // conn.release();
             });
 
-            function do_query(token, jdata) {
-                let cmd = 'select ?,? into @token,@jdata;call ddd_' + p.sp + '(@token,@jdata);select @jdata as jdata;';
-                conn.query(cmd, [token, jdata], function(err, result, fields) {
-                    if (!err) {
-                        let last = result.length - 1;
-                        //console.log(last);
-                        //console.log(result[last]);
-                        if (result[last][0].jdata !== undefined) {
-                            var r = JSON.parse(result[last][0].jdata);
-                            p.callback(null, r);
-                        } else {
-                            p.callback(404, {
-                                err_code: 6,
-                                err_message: "no result"
-                            });
-                        }
+        } else {
+            do_query("{}", JSON.stringify(p.data));
+        }
+
+
+        function do_query(token, jdata) {
+            console.log({ pos: "do_query", token: token, jdata: jdata });
+            let cmd = 'select ?,? into @token,@jdata;call ddd_' + p.sp + '(@token,@jdata);select @jdata as jdata;';
+            pool.query(cmd, [token, jdata], function(err, result, fields) {
+                if (!err) {
+                    let last = result.length - 1;
+                    if (result[last][0].jdata !== undefined) {
+                        var r = JSON.parse(result[last][0].jdata);
+                        p.callback(null, r);
                     } else {
-                        p.callback(
-                            500, {
-                                err_code: err.errno,
-                                sqlState: err.sqlState,
-                                err_message: err.sqlMessage
-                            });
+                        p.callback(404, {
+                            err_code: 6,
+                            err_message: "no result"
+                        });
                     }
-                });
-                conn.release();
-            }
-        });
+                } else {
+                    p.callback(
+                        500, {
+                            err_code: err.errno,
+                            sqlState: err.sqlState,
+                            err_message: err.sqlMessage
+                        });
+                }
+            });
+        }
     },
 
     /**
