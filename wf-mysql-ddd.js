@@ -2,21 +2,6 @@ var express = require('express');
 var api = express.Router();
 const mysql = require("mysql");
 const redis = require('redis');
-var pool = null;
-var redis_client = null;
-
-
-// if (!config.conn) {
-//     throw new Error("mysql connection not exists");
-// }
-
-// if (config.redis) {
-//     throw new Error("redis config not exists");
-// }
-
-function createPool(options) {
-    pool = mysql.createPool(options);
-}
 
 var ddd = {
     Router: api,
@@ -28,34 +13,19 @@ var ddd = {
      * @param {*} p 
      */
     exec: function(p) {
-        if (!p.conn) {
-            p.callback(500, {
-                err_code: 1,
-                err_message: "mysql connection not exists"
-            });
-            return;
-        }
-        if (!ddd.redis) {
-            p.callback(500, {
-                err_code: 2,
-                err_message: "redis config not exists"
-            });
-            return;
-        }
         //检查连接池是否已经创建，如果没有则创建之。
-        if (!pool) {
-            p.conn.multipleStatements = true;
-            createPool(p.conn)
+        if (!global.ddd_mysql_pool) {
+            ddd.conn.multipleStatements = true;
+            global.ddd_mysql_pool = mysql.createPool(ddd.conn);
         };
-
         //检查redis client是否创建
-        if (!redis_client) { redis_client = redis.createClient(ddd.redis); };
-        if (p.token) {
+        if (!global.ddd_redis_client) { global.ddd_redis_client = redis.createClient(ddd.redis); };
 
-            redis_client.get("token." + p.token, function(err, jtoken) {
-
+        if (!p.token) {
+            do_query("{}", JSON.stringify(p.data));
+        } else if (typeof(p.token) === "string") {
+            ddd.token_resolve(p.token, (err, jtoken) => {
                 if (!err && jtoken) {
-                    redis_client.expire("token." + p.token, 1200); //如果有访问，则自动延长token过期时间20分钟。
                     do_query(jtoken, JSON.stringify(p.data));
                 } else {
                     p.callback(403, {
@@ -63,17 +33,16 @@ var ddd = {
                         err_message: "token无效"
                     });
                 }
+
             });
-
         } else {
-            do_query("{}", JSON.stringify(p.data));
+            do_query(JSON.stringify(p.token), JSON.stringify(p.data));
         }
-
 
         function do_query(token, jdata) {
             console.log({ pos: "do_query", token: token, jdata: jdata });
-            let cmd = 'select ?,? into @token,@jdata;call ddd_' + p.sp + '(@token,@jdata);select @jdata as jdata;';
-            pool.query(cmd, [token, jdata], function(err, result, fields) {
+            let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
+            global.ddd_mysql_pool.query(cmd, [token, jdata], function(err, result, fields) {
                 if (!err) {
                     let last = result.length - 1;
                     if (result[last][0].jdata !== undefined) {
@@ -97,42 +66,40 @@ var ddd = {
         }
     },
 
+    token_resolve: function(strtoken, callback) {
+        global.ddd_redis_client.get("token." + strtoken, function(err, jtoken) {
+            if (!err && jtoken) {
+                global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
+            }
+            callback(err, jtoken);
+        });
+    },
+
     /**
      * 列出所有ddd存储过程
      * @param {*} p 
      */
     list: function(p) {
-
         //检查连接池是否已经创建，如果没有则创建之。
-        if (!pool) {
+        if (!global.ddd_mysql_pool) {
             p.conn.multipleStatements = true;
-            createPool(p.conn)
+            global.ddd_mysql_pool = mysql.createPool(ddd.conn);
         };
-
-        pool.getConnection(function(err, conn) {
-            let cmd = 'call api_list;';
-            conn.query(cmd, function(err, result, fields) {
-                if (!err) {
-                    if (result[0][0].jdata) {
-                        var r = JSON.parse(result[0][0].jdata);
-                        p.callback({ result: r });
-                    } else if (typeof(p.error) === 'function') {
-                        p.callback({});
-                    }
-                } else {
-                    p.callback({
-                        errno: err.errno,
-                        sqlState: err.sqlState,
-                        sqlMessage: err.sqlMessage
-                    });
+        global.ddd_mysql_pool.query(cmd, function(err, result, fields) {
+            if (!err) {
+                if (result[0][0].jdata) {
+                    var r = JSON.parse(result[0][0].jdata);
+                    p.callback({ result: r });
+                } else if (typeof(p.error) === 'function') {
+                    p.callback({});
                 }
-            });
-            conn.on("error", err => {
-                console.log(err);
-                conn.end();
-                p.callback(err);
-            });
-            conn.release();
+            } else {
+                p.callback({
+                    errno: err.errno,
+                    sqlState: err.sqlState,
+                    sqlMessage: err.sqlMessage
+                });
+            }
         });
     }
 };
@@ -140,7 +107,7 @@ var ddd = {
 
 api.get('/', function(req, res) {
     ddd.list({
-        conn: ddd.conn,
+        //conn: ddd.conn,
         callback: function(r) {
             console.log(r);
             //res.render('apies', r.result);
@@ -153,16 +120,10 @@ api.get('/', function(req, res) {
 api.get('/:sp', function(req, res, next) {
     //console.log(req.cookies["token"]);
     ddd.exec({
-        conn: ddd.conn,
-        sp: req.params.sp,
+        sp: "ddd_" + req.params.sp,
         token: req.cookies["token"],
         data: req.query,
         callback: function(err, r) {
-            // console.log({
-            //     pos: "get callback",
-            //     err: err,
-            //     r: r
-            // });
             if (err) {
                 res.status(err);
                 res.send(r);
@@ -173,18 +134,11 @@ api.get('/:sp', function(req, res, next) {
         },
     });
 }).post('/:sp', function(req, res, next) {
-    //console.log(req.body);
     ddd.exec({
-        conn: ddd.conn,
-        sp: req.params.sp,
+        sp: "ddd_" + req.params.sp,
         token: req.cookies["token"],
         data: req.body,
         callback: function(err, r) {
-            // console.log({
-            //     pos: "post callback",
-            //     err: err,
-            //     r: r
-            // });
             if (err) {
                 console.log({
                     err: err,
