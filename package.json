@@ -1,6 +1,6 @@
 {
     "name": "wf-mysql-ddd",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "description": "mysql-ddd",
     "main": "wf-mysql-ddd.js",
     "scripts": {

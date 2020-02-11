@@ -19,7 +19,12 @@ var ddd = {
             global.ddd_mysql_pool = mysql.createPool(ddd.conn);
         };
         //检查redis client是否创建
-        if (!global.ddd_redis_client) { global.ddd_redis_client = redis.createClient(ddd.redis); };
+        if (!global.ddd_redis_client) {
+            global.ddd_redis_client = redis.createClient(ddd.redis);
+            global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!", e: e }); });
+            global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
+            global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
+        };
 
         if (!p.token) {
             do_query("{}", JSON.stringify(p.data));
