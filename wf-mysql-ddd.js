@@ -7,6 +7,8 @@ var ddd = {
     Router: api,
     conn: null,
     redis: null,
+    auth_token: "token",
+    token_prefix: "token.",
 
     /**
      * 执行ddd存储过程
@@ -111,14 +113,15 @@ var ddd = {
 
 
 api.get('/', function(req, res) {
-    ddd.list({
-        //conn: ddd.conn,
-        callback: function(r) {
-            console.log(r);
-            //res.render('apies', r.result);
-            res.send(r.result);
-        }
-    });
+    res.send("wf-mysql-ddd");
+    // ddd.list({
+    //     //conn: ddd.conn,
+    //     callback: function(r) {
+    //         console.log(r);
+    //         //res.render('apies', r.result);
+    //         res.send(r.result);
+    //     }
+    // });
 });
 
 
