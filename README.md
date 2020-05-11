@@ -1,4 +1,4 @@
-wf-mysql-ddd
+#wf-mysql-ddd
 
 
 ## 使用方法
@@ -42,3 +42,10 @@ ddd.redis=config.redis;
 app.use('/api',ddd.Router);
 
 ```
+
+### 测试api访问
+
+http://xxx/api
+
+
+
