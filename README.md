@@ -66,9 +66,24 @@ get http://{userhost}/api/{service_name}
 post http://{userhost}/api/{service_name}
 
 ### 从后端调动mysql服务
-
-ddd.exec("{servic_ename}"",callback)
-
+```javascript
+ddd.exec({
+    sp:ddd_{service_name},
+    token: req.cookies["token"],
+    data: req.query,
+    callback: function(err, r) {
+        //sample callback begin
+        if (err) {
+            res.status(err);
+            res.send(r);
+        } else {
+            res.set('content-type', 'application/json');
+            res.send(r);
+        }
+        //sample callback end
+    },
+});
+```
 
 
 
