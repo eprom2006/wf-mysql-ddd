@@ -62,8 +62,8 @@ wf-mysql-ddd使用名为token的cookie标识用户身份，你的登录系统在
 
 ### 从前段调用musql服务
 
-get http://{userhost}/api/{service_name}
-post http://{userhost}/api/{service_name}
+* get http://{userhost}/api/{service_name}
+* post http://{userhost}/api/{service_name}
 
 ### 从后端调动mysql服务
 ```javascript
