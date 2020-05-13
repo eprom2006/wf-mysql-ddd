@@ -147,6 +147,7 @@ api.get('/:sp', function(req, res, next) {
         token: req.cookies["token"],
         data: req.body,
         callback: function(err, r) {
+            //sample callback begin
             if (err) {
                 console.log({
                     err: err,
@@ -159,6 +160,7 @@ api.get('/:sp', function(req, res, next) {
                 res.set('content-type', 'application/json');
                 res.send(r);
             }
+            //sample callback end
         },
     });
 });
