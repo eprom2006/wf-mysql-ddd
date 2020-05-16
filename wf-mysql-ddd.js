@@ -15,19 +15,6 @@ var ddd = {
      * @param {*} p 
      */
     exec: function(p) {
-        //检查连接池是否已经创建，如果没有则创建之。
-        if (!global.ddd_mysql_pool) {
-            ddd.conn.multipleStatements = true;
-            global.ddd_mysql_pool = mysql.createPool(ddd.conn);
-        };
-        //检查redis client是否创建
-        if (!global.ddd_redis_client) {
-            global.ddd_redis_client = redis.createClient(ddd.redis);
-            global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!"}); });
-            global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
-            global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
-        };
-
         if (!p.token) {
             do_query("{}", JSON.stringify(p.data));
         } else if (typeof(p.token) === "string") {
@@ -47,6 +34,12 @@ var ddd = {
         }
 
         function do_query(token, jdata) {
+            //检查连接池是否已经创建，如果没有则创建之。
+            if (!global.ddd_mysql_pool) {
+                ddd.conn.multipleStatements = true;
+                global.ddd_mysql_pool = mysql.createPool(ddd.conn);
+            };
+
             console.log({ pos: "do_query", token: token, jdata: jdata });
             let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
             global.ddd_mysql_pool.query(cmd, [token, jdata], function(err, result, fields) {
@@ -73,7 +66,39 @@ var ddd = {
         }
     },
 
+    whois: async function(strtoken) {
+        const token = await new Promise((resolve, reject) => {
+            ddd.token_resolve(strtoken, (err, jtoken) => {
+                if (err) {
+                    reject(undefined);
+                } else {
+                    resolve(jtoken)
+                }
+            })
+        });
+        return token
+    },
+
     token_resolve: function(strtoken, callback) {
+
+        if (!global.ddd_node_cache) {
+            //如果全局ddd_node_cache未初始化，则初始化之。
+            const cache = require('node-cache');
+            global.ddd_node_cache = new cache({
+                stdTTL: 30, //标准ttl=30秒。
+                checkperiod: 120, //每120秒删除一次过期键值。
+            });
+        }
+
+
+        //检查redis client是否创建
+        if (!global.ddd_redis_client) {
+            global.ddd_redis_client = redis.createClient(ddd.redis);
+            global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!" }); });
+            global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
+            global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
+        };
+
         global.ddd_redis_client.get("token." + strtoken, function(err, jtoken) {
             if (!err && jtoken) {
                 global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
@@ -164,5 +189,12 @@ api.get('/:sp', function(req, res, next) {
         },
     });
 });
+
+//阻止next路由
+api.all('/*', (req, res) => {
+    res.status(404);
+    res.send('file not found!')
+})
+
 
 module.exports = ddd;
