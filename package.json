@@ -3,18 +3,16 @@
     "version": "1.0.20",
     "description": "mysql-ddd",
     "main": "wf-mysql-ddd.js",
-    "scripts": {
-        "test": "node test.js"
-    },
+    "scripts": {},
     "author": "li wei",
     "license": "ISC",
     "dependencies": {
         "body-parser": "^1.19.0",
         "cookie-parser": "^1.4.4",
         "express": "^4.17.1",
+        "md5": "^2.2.1",
         "mysql": "^2.17.1",
         "node-cache": "^5.1.0",
-        "pug": "^2.0.4",
         "redis": "^2.8.0"
     },
     "repository": "http://github.com/eprom2006/wf-mysql-ddd.git"

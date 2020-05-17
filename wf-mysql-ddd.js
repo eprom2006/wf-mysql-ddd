@@ -2,6 +2,20 @@ var express = require('express');
 var api = express.Router();
 const mysql = require("mysql");
 const redis = require('redis');
+const md5 = require('md5');
+
+
+// 确认redis连接是否建立，没有则创建。
+function verify_redis_conn() {
+    //检查redis client是否创建
+    if (!global.ddd_redis_client) {
+        global.ddd_redis_client = redis.createClient(ddd.redis);
+        global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!" }); });
+        global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
+        global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
+    };
+    return global.ddd_redis_client
+}
 
 var ddd = {
     Router: api,
@@ -27,7 +41,6 @@ var ddd = {
                         err_message: "token无效"
                     });
                 }
-
             });
         } else {
             do_query(JSON.stringify(p.token), JSON.stringify(p.data));
@@ -66,17 +79,42 @@ var ddd = {
         }
     },
 
+
+    set_token: function(userdata, token) {
+        if (token === undefined) {
+            userdata.tokencreatetime = new Date();
+            const md5 = require('md5');
+            token = md5(JSON.stringify(userdata));
+        }
+        var redis_conn = verify_redis_conn();
+        let key = "token." + token;
+        redis_conn.set(key, JSON.stringify(userdata));
+        redis_conn.expire(key, 30) //默认仅设置30秒有效期，需要重新设置过期时间。
+        return token
+    },
+
+    set_expire: function(strtoken, exprieinseconds) {
+        var redis_conn = verify_redis_conn();
+        let key = 'token.' + strtoken;
+        redis_conn.expire(key, exprieinseconds);
+    },
+
+    delete_token: function(strtoken, jdata) {
+        var redis_conn = verify_redis_conn();
+        redis_conn.delete("token." + strtoken);
+    },
+
     whois: async function(strtoken) {
         const token = await new Promise((resolve, reject) => {
             ddd.token_resolve(strtoken, (err, jtoken) => {
-                if (err) {
-                    reject(undefined);
-                } else {
-                    resolve(jtoken)
-                }
+                resolve(jtoken);
+                // if (err) {
+                //     reject(undefined);
+                // } else {
+                //     resolve(jtoken)
+                // }
             })
         });
-        return token
     },
 
     token_resolve: function(strtoken, callback) {
@@ -91,18 +129,13 @@ var ddd = {
         }
 
 
-        //检查redis client是否创建
-        if (!global.ddd_redis_client) {
-            global.ddd_redis_client = redis.createClient(ddd.redis);
-            global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!" }); });
-            global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
-            global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
-        };
+        //检查redis client是否创建。
+        var redis_conn = verify_redis_conn();
 
-        global.ddd_redis_client.get("token." + strtoken, function(err, jtoken) {
-            if (!err && jtoken) {
-                global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
-            }
+        redis_conn.get("token." + strtoken, function(err, jtoken) {
+            // if (!err && jtoken) {
+            //     global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
+            // }
             callback(err, jtoken);
         });
     },
