@@ -26,7 +26,7 @@ var ddd = {
 
     /**
      * 执行ddd存储过程
-     * @param {*} p 
+     * @param {*} p
      */
     exec: function(p) {
         if (!p.token) {
@@ -107,7 +107,7 @@ var ddd = {
     whois: async function(strtoken) {
         const token = await new Promise((resolve, reject) => {
             ddd.token_resolve(strtoken, (err, jtoken) => {
-                resolve(jtoken);
+                resolve(jtoken)
                 // if (err) {
                 //     reject(undefined);
                 // } else {
@@ -115,6 +115,7 @@ var ddd = {
                 // }
             })
         });
+        return token;
     },
 
     token_resolve: function(strtoken, callback) {
@@ -132,7 +133,7 @@ var ddd = {
         //检查redis client是否创建。
         var redis_conn = verify_redis_conn();
 
-        redis_conn.get("token." + strtoken, function(err, jtoken) {
+        redis_conn.get("token." + strtoken, function (err, jtoken) {
             // if (!err && jtoken) {
             //     global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
             // }
@@ -142,7 +143,7 @@ var ddd = {
 
     /**
      * 列出所有ddd存储过程
-     * @param {*} p 
+     * @param {*} p
      */
     list: function(p) {
         //检查连接池是否已经创建，如果没有则创建之。
