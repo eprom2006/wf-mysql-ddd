@@ -4,6 +4,9 @@ const mysql = require("mysql");
 const redis = require('redis');
 const md5 = require('md5');
 
+function key(token){
+    return 'token:'.concat(token);
+}
 
 // 确认redis连接是否建立，没有则创建。
 function verify_redis_conn() {
@@ -13,8 +16,8 @@ function verify_redis_conn() {
         global.ddd_redis_client.on("connect", (e) => { console.log({ pos: "redis connected!" }); });
         global.ddd_redis_client.on("error", (e) => { console.log({ pos: "ddd redis on error", e: e }) });
         global.ddd_redis_client.on("reconnecting", (e) => { console.log({ pos: "ddd redis reconnecting...", e: e }) });
-    };
-    return global.ddd_redis_client
+    }
+    return global.ddd_redis_client;
 }
 
 var ddd = {
@@ -51,7 +54,7 @@ var ddd = {
             if (!global.ddd_mysql_pool) {
                 ddd.conn.multipleStatements = true;
                 global.ddd_mysql_pool = mysql.createPool(ddd.conn);
-            };
+            }
 
             console.log({ pos: "do_query", token: token, jdata: jdata });
             let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
@@ -89,8 +92,8 @@ var ddd = {
         var redis_conn = verify_redis_conn();
         let key = "token." + token;
         redis_conn.set(key, JSON.stringify(userdata));
-        redis_conn.expire(key, 30) //默认仅设置30秒有效期，需要重新设置过期时间。
-        return token
+        redis_conn.expire(key, 30); //默认仅设置30秒有效期，需要重新设置过期时间。
+        return token;
     },
 
     set_expire: function(strtoken, exprieinseconds) {
