@@ -108,7 +108,7 @@ var ddd = {
     },
 
     whois: async function(strtoken) {
-        const token = await new Promise((resolve, reject) => {
+        var token = await new Promise((resolve, reject) => {
             ddd.token_resolve(strtoken, (err, jtoken) => {
                 resolve(jtoken)
                 // if (err) {
