@@ -8,6 +8,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var app = express();
+const query = require('./mysqlquery');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -42,29 +43,77 @@ app.use(function(req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
-    });
+// if (app.get('env') === 'development') {
+//     app.use(function(err, req, res, next) {
+//         res.status(err.status || 500);
+//         res.render('error', {
+//             message: err.message,
+//             error: err
+//         });
+//     });
+// }
+
+// // production error handler
+// // no stacktraces leaked to user
+// app.use(function(err, req, res, next) {
+//     res.status(err.status || 500);
+//     res.render('error', {
+//         message: err.message,
+//         error: {}
+//     });
+// });
+
+// app.set('port', process.env.PORT || 80);
+
+// var server = app.listen(app.get('port'), function() {
+//     debug('Express server listening on port ' + server.address().port);
+//     console.log('Express server listening on port ' + server.address().port);
+// });
+
+
+
+
+// //写订单
+let orderId = null;
+let jdata = {
+    doctype: "充值单",
+    user: "",
+    memo: "orderData.memo",
+    account: {
+        receivable: 12.03
+    }
+};
+var p = {
+    sp: "ddd_order_append",
+    token: "sdfasdfalkjaksdjf",
+    jdata: jdata,
+    // callback: function(code, result) {
+    //     console.log(code);
+    //     console.log(result);
+    //     var ss = code;
+    //     var res = result;
+    //     orderId = result.caseid
+    // }
+};
+var result = null;
+
+try {
+    result = ddd.exec_sync(p);
+    console.log(result);
+    result.then(res => {
+            console.log(res);
+            console.log(res.casid);
+            orderId = res.caseid;
+        })
+        //orderId = result.casid;
+        // ddd.exec_sync(p).then(res => {
+        //     console.log(res);
+
+    // })
+    console.log(orderId);
+
+} catch (error) {
+    console.log(error);
 }
 
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
-    });
-});
-
-app.set('port', process.env.PORT || 80);
-
-var server = app.listen(app.get('port'), function() {
-    debug('Express server listening on port ' + server.address().port);
-    console.log('Express server listening on port ' + server.address().port);
-});
+console.log("end");
