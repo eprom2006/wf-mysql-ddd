@@ -172,7 +172,13 @@ var ddd = {
                 checkperiod: 120, //每120秒删除一次过期键值。
             });
         }
-
+        // 获取cache中的token 存在就返回
+        cache_jtoken = global.ddd_node_cache.get("token." + strtoken);
+        if (!!cache_jtoken) {
+            console.log("cache get token! key:" + strtoken);
+            callback(null, cache_jtoken);
+            return;
+        }
 
         //检查redis client是否创建。
         var redis_conn = verify_redis_conn();
@@ -181,6 +187,10 @@ var ddd = {
             // if (!err && jtoken) {
             //     global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
             // }
+
+            // 加载token到cache
+            console.log("redis get token! key:" + strtoken);
+            global.ddd_node_cache.set("token." + strtoken, jtoken);
             callback(err, jtoken);
         });
     },

@@ -69,51 +69,82 @@ app.use(function(req, res, next) {
 //     debug('Express server listening on port ' + server.address().port);
 //     console.log('Express server listening on port ' + server.address().port);
 // });
-
-
-
-
-// //写订单
-let orderId = null;
-let jdata = {
-    doctype: "充值单",
-    user: "",
-    memo: "orderData.memo",
-    account: {
-        receivable: 12.03
-    }
-};
-var p = {
-    sp: "ddd_order_append",
-    token: "sdfasdfalkjaksdjf",
-    jdata: jdata,
-    // callback: function(code, result) {
-    //     console.log(code);
-    //     console.log(result);
-    //     var ss = code;
-    //     var res = result;
-    //     orderId = result.caseid
-    // }
-};
-var result = null;
-
-try {
-    result = ddd.exec_sync(p);
-    console.log(result);
-    result.then(res => {
-            console.log(res);
-            console.log(res.casid);
-            orderId = res.caseid;
-        })
-        //orderId = result.casid;
-        // ddd.exec_sync(p).then(res => {
-        //     console.log(res);
-
-    // })
-    console.log(orderId);
-
-} catch (error) {
-    console.log(error);
+// 测试缓存 cache
+let userData = {
+    userid: 123,
+    unionid: "465413213",
+    name: "zhangsan",
+    group: "wanfang"
 }
+ddd.set_token(userData, "123456789");
+
+// 第一次读取,from redis 并载入cache
+ddd.token_resolve("123456789", function(err, data) {
+    console.log(err);
+    console.log(data);
+});
+
+
+// 第二次读取 from cache 
+ddd.token_resolve("123456789", function(err, data) {
+    console.log(err);
+    console.log(data);
+});
+
+setTimeout(() => {
+    // 第三次读取 from reids  cache exprie???? 
+    ddd.token_resolve("123456789", function(err, data) {
+        console.log(err);
+        console.log(data);
+    });
+}, 2000);
+
+
+
+
+
+
+//  数据库同步操作测试
+// let orderId = null;
+// let jdata = {
+//     doctype: "充值单",
+//     user: "",
+//     memo: "orderData.memo",
+//     account: {
+//         receivable: 12.03
+//     }
+// };
+// var p = {
+//     sp: "ddd_order_append",
+//     token: "sdfasdfalkjaksdjf",
+//     jdata: jdata,
+//     // callback: function(code, result) {
+//     //     console.log(code);
+//     //     console.log(result);
+//     //     var ss = code;
+//     //     var res = result;
+//     //     orderId = result.caseid
+//     // }
+// };
+// var result = null;
+
+// try {
+//     result = ddd.exec_sync(p);
+//     console.log(result);
+//     result.then(res => {
+//             console.log(res);
+//             console.log(res.casid);
+//             orderId = res.caseid;
+//         })
+//         //orderId = result.casid;
+//         // ddd.exec_sync(p).then(res => {
+//         //     console.log(res);
+
+//     // })
+//     console.log(orderId);
+
+// } catch (error) {
+//     console.log(error);
+// }
 
 console.log("end");
