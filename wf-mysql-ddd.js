@@ -22,7 +22,7 @@ function verify_redis_conn() {
 // 数据同步查询
 async function do_quey_sync(p) {
     var res = await new Promise((resolve, reject) => {
-        global.ddd_mysql_pool.query(p.cmd, [JSON.stringify(p.token), JSON.stringify(p.jdata)], (err, result) => {
+        global.ddd_mysql_pool.query(p.cmd, [JSON.stringify(p.token), JSON.stringify(p.data)], (err, result) => {
             if (err) {
                 reject(err)
             } else {
