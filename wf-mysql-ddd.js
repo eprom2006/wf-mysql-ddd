@@ -131,7 +131,7 @@ var ddd = {
             token = md5(JSON.stringify(userdata));
         }
         var redis_conn = verify_redis_conn();
-        let key = "token." + token;
+        let key = "token:" + token;
         redis_conn.set(key, JSON.stringify(userdata));
         redis_conn.expire(key, 30); //默认仅设置30秒有效期，需要重新设置过期时间。
         return token;
@@ -139,13 +139,13 @@ var ddd = {
 
     set_expire: function(strtoken, exprieinseconds) {
         var redis_conn = verify_redis_conn();
-        let key = 'token.' + strtoken;
+        let key = 'token:' + strtoken;
         redis_conn.expire(key, exprieinseconds);
     },
 
     delete_token: function(strtoken, jdata) {
         var redis_conn = verify_redis_conn();
-        redis_conn.delete("token." + strtoken);
+        redis_conn.delete("token:" + strtoken);
     },
 
     whois: async function(strtoken) {
@@ -173,7 +173,7 @@ var ddd = {
             });
         }
         // 获取cache中的token 存在就返回
-        cache_jtoken = global.ddd_node_cache.get("token." + strtoken);
+        cache_jtoken = global.ddd_node_cache.get("token:" + strtoken);
         if (!!cache_jtoken) {
             console.log("cache get token! key:" + strtoken);
             callback(null, cache_jtoken);
@@ -183,14 +183,14 @@ var ddd = {
         //检查redis client是否创建。
         var redis_conn = verify_redis_conn();
 
-        redis_conn.get("token." + strtoken, function(err, jtoken) {
+        redis_conn.get("token:" + strtoken, function(err, jtoken) {
             // if (!err && jtoken) {
-            //     global.ddd_redis_client.expire("token." + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
+            //     global.ddd_redis_client.expire("token:" + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
             // }
 
             // 加载token到cache
             console.log("redis get token! key:" + strtoken);
-            global.ddd_node_cache.set("token." + strtoken, jtoken);
+            global.ddd_node_cache.set("token:" + strtoken, jtoken);
             callback(err, jtoken);
         });
     },
