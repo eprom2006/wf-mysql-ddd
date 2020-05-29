@@ -46,7 +46,7 @@ var ddd = {
     conn: null,
     redis: null,
     auth_token: "token",
-    token_prefix: "token.",
+    token_prefix: "token:",
 
     /**
      * 执行ddd存储过程
