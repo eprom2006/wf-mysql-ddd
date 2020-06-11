@@ -21,7 +21,7 @@ function verify_redis_conn() {
 }
 // 数据同步查询
 async function do_quey_sync(p) {
-    var res = await new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         global.ddd_mysql_pool.query(p.cmd, [JSON.stringify(p.token), JSON.stringify(p.data)], (err, result) => {
             if (err) {
                 reject(err)
@@ -37,8 +37,7 @@ async function do_quey_sync(p) {
                 }
             }
         })
-    }).catch(err => { console.log(err) })
-    return res;
+    });
 }
 
 var ddd = {
@@ -103,7 +102,7 @@ var ddd = {
         }
     },
     exec_sync: async function(p) {
-        var result = await new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             try {
                 if (!p.token) {
                     p.token = {};
@@ -120,8 +119,7 @@ var ddd = {
             } catch (error) {
                 reject(error);
             }
-        }).catch(err => { console.log(err) })
-        return result;
+        });
     },
 
     set_token: function(userdata, token) {
