@@ -22,7 +22,7 @@ function verify_redis_conn() {
 // 数据同步查询
 async function do_quey_sync(p) {
     return await new Promise((resolve, reject) => {
-        global.ddd_mysql_pool.query(p.cmd, [JSON.stringify(p.token), JSON.stringify(p.data)], (err, result) => {
+        global.ddd_mysql_pool.query(p.cmd, [p.token, JSON.stringify(p.data)], (err, result) => {
             if (err) {
                 reject(err)
             } else {
@@ -52,22 +52,17 @@ var ddd = {
      * @param {*} p
      */
     exec: function(p) {
-        if (!p.token) {
-            do_query("{}", JSON.stringify(p.data));
-        } else if (typeof(p.token) === "string") {
-            ddd.token_resolve(p.token, (err, jtoken) => {
-                if (!err && jtoken) {
-                    do_query(jtoken, JSON.stringify(p.data));
-                } else {
-                    p.callback(403, {
-                        err_code: 4,
-                        err_message: "token无效"
-                    });
-                }
-            });
-        } else {
-            do_query(JSON.stringify(p.token), JSON.stringify(p.data));
-        }
+        ddd.token_resolve(p.token, (err, jtoken) => {
+            if (!err && jtoken) {
+                do_query(jtoken, p.data);
+            } else {
+                p.callback(403, {
+                    err_code: 4,
+                    err_message: "token无效"
+                });
+            }
+        });
+
 
         function do_query(token, jdata) {
             //检查连接池是否已经创建，如果没有则创建之。
@@ -78,7 +73,7 @@ var ddd = {
 
             console.log({ pos: "do_query", token: token, jdata: jdata });
             let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
-            global.ddd_mysql_pool.query(cmd, [token, jdata], function(err, result, fields) {
+            global.ddd_mysql_pool.query(cmd, [token, JSON.stringify(jdata)], function(err, result, fields) {
                 if (!err) {
                     let last = result.length - 1;
                     if (result[last][0].jdata !== undefined) {
@@ -103,22 +98,21 @@ var ddd = {
     },
     exec_sync: async function(p) {
         return await new Promise((resolve, reject) => {
-            try {
-                if (!p.token) {
-                    p.token = {};
-                } else if (typeof(p.token) === "string") {
-                    p.token = ddd.whois(p.token);
-                }
-                if (!global.ddd_mysql_pool) {
-                    ddd.conn.multipleStatements = true;
-                    global.ddd_mysql_pool = mysql.createPool(ddd.conn);
-                }
+            ddd.whois(p.token)
+                .then(res => {
+                    p.token = res;
+                    if (!global.ddd_mysql_pool) {
+                        ddd.conn.multipleStatements = true;
+                        global.ddd_mysql_pool = mysql.createPool(ddd.conn);
+                    }
+                    console.log("p.token" + JSON.stringify(p.token));
+                    p.cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
 
-                p.cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
-                resolve(do_quey_sync(p));
-            } catch (error) {
-                reject(error);
-            }
+                    resolve(do_quey_sync(p));
+                })
+                .catch(err => {
+                    reject(err);
+                })
         });
     },
 
@@ -147,7 +141,7 @@ var ddd = {
     },
 
     whois: async function(strtoken) {
-        var token = await new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             ddd.token_resolve(strtoken, (err, jtoken) => {
                 resolve(jtoken)
                     // if (err) {
@@ -157,10 +151,17 @@ var ddd = {
                     // }
             })
         });
-        return token;
     },
 
-    token_resolve: function(strtoken, callback) {
+    token_resolve: function(token, callback) {
+        if (!token) {
+            callback(null, "{}");
+            return;
+        }
+        if (typeof(token) !== "string") {
+            callback(null, JSON.stringify(token));
+            return;
+        }
 
         if (!global.ddd_node_cache) {
             //如果全局ddd_node_cache未初始化，则初始化之。
@@ -171,9 +172,9 @@ var ddd = {
             });
         }
         // 获取cache中的token 存在就返回
-        cache_jtoken = global.ddd_node_cache.get("token:" + strtoken);
+        cache_jtoken = global.ddd_node_cache.get("token:" + token);
         if (!!cache_jtoken) {
-            console.log("cache get token! key:" + strtoken);
+            console.log("cache get token! key:" + token);
             callback(null, cache_jtoken);
             return;
         }
@@ -181,14 +182,14 @@ var ddd = {
         //检查redis client是否创建。
         var redis_conn = verify_redis_conn();
 
-        redis_conn.get("token:" + strtoken, function(err, jtoken) {
+        redis_conn.get("token:" + token, function(err, jtoken) {
             // if (!err && jtoken) {
-            //     global.ddd_redis_client.expire("token:" + strtoken, 1200); //如果有访问，则自动延长token过期时间20分钟。
+            //     global.ddd_redis_client.expire("token:" + token, 1200); //如果有访问，则自动延长token过期时间20分钟。
             // }
 
             // 加载token到cache
-            console.log("redis get token! key:" + strtoken);
-            global.ddd_node_cache.set("token:" + strtoken, jtoken);
+            console.log("redis get token! key:" + token);
+            global.ddd_node_cache.set("token:" + token, jtoken);
             callback(err, jtoken);
         });
     },
