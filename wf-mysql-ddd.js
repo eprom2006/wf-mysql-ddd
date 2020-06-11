@@ -105,7 +105,7 @@ var ddd = {
                         ddd.conn.multipleStatements = true;
                         global.ddd_mysql_pool = mysql.createPool(ddd.conn);
                     }
-                    console.log("p.token" + JSON.stringify(p.token));
+                    console.log("p.token" + p.token);
                     p.cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
 
                     resolve(do_quey_sync(p));
