@@ -13,7 +13,7 @@
 
 #### 从gitlab.wf.pub安装最新版本
 ```shell
-npm instal git+http://39.98.239.3/liwei/wf-mysql-ddd
+npm install git+http://39.98.239.3/liwei/wf-mysql-ddd
 ```
 
 ### 配置文件config.js
