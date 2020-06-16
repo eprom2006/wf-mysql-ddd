@@ -19,10 +19,10 @@ function verify_redis_conn() {
     }
     return global.ddd_redis_client;
 }
-// 数据库同步操作
+// 数据同步查询
 async function do_quey_sync(p) {
     return await new Promise((resolve, reject) => {
-        global.ddd_mysql_pool.query("ddd_" + p.cmd, [p.token, JSON.stringify(p.data)], (err, result) => {
+        global.ddd_mysql_pool.query(p.cmd, [p.token, JSON.stringify(p.data)], (err, result) => {
             if (err) {
                 reject(err)
             } else {
