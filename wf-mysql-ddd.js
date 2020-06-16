@@ -22,7 +22,7 @@ function verify_redis_conn() {
 // 数据库同步操作
 async function do_quey_sync(p) {
     return await new Promise((resolve, reject) => {
-        global.ddd_mysql_pool.query("ddd_" + p.cmd, [p.token, JSON.stringify(p.data)], (err, result) => {
+        global.ddd_mysql_pool.query(p.cmd, [p.token, JSON.stringify(p.data)], (err, result) => {
             if (err) {
                 reject(err)
             } else {
@@ -106,7 +106,7 @@ var ddd = {
                         global.ddd_mysql_pool = mysql.createPool(ddd.conn);
                     }
                     console.log("p.token" + p.token);
-                    p.cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
+                    p.cmd = 'select ?,? into @token,@jdata;call ' + "ddd_" + p.sp + '(@token,@jdata);select @jdata as jdata;';
 
                     resolve(do_quey_sync(p));
                 })
