@@ -105,7 +105,7 @@ var ddd = {
                         ddd.conn.multipleStatements = true;
                         global.ddd_mysql_pool = mysql.createPool(ddd.conn);
                     }
-                    console.log("p.token" + p.token);
+                    // console.log("p.token" + p.token);
                     p.cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
 
                     resolve(do_quey_sync(p));
@@ -174,7 +174,7 @@ var ddd = {
         // 获取cache中的token 存在就返回
         cache_jtoken = global.ddd_node_cache.get("token:" + token);
         if (!!cache_jtoken) {
-            console.log("cache get token! key:" + token);
+            console.log("cache get token!");
             callback(null, cache_jtoken);
             return;
         }
@@ -188,7 +188,7 @@ var ddd = {
             // }
 
             // 加载token到cache
-            console.log("redis get token! key:" + token);
+            console.log("redis get token!");
             global.ddd_node_cache.set("token:" + token, jtoken);
             callback(err, jtoken);
         });
