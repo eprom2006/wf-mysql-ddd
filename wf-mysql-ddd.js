@@ -53,7 +53,7 @@ var ddd = {
                 global.ddd_mysql_pool = mysql.createPool(ddd.conn);
             };
 
-            console.log({ pos: "do_query", token: token, jdata: jdata });
+            // console.log({ pos: "do_query", token: token, jdata: jdata });
             let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
             global.ddd_mysql_pool.query(cmd, [token, jdata], function(err, result, fields) {
                 if (!err) {
