@@ -5,10 +5,16 @@
 
 ### 安装wf-mysql-ddd 模块
 
+#### 从npmjs安装
 ```
+```shell
 #npm install wf-mysql-ddd
 ```
 
+#### 从gitlab.wf.pub安装最新版本
+```shell
+npm install git+http://39.98.239.3/liwei/wf-mysql-ddd
+```
 
 ### 配置文件config.js
 ``` javascript
