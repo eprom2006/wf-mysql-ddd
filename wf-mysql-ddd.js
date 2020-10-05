@@ -88,11 +88,7 @@ var ddd = {
                 } else {
                     console.log({err,result,fields});
                     p.callback(
-                        500, {
-                            err_code: err.errno,
-                            sqlState: err.sqlState,
-                            err_message: err.sqlMessage
-                        });
+                        500, err);
                 }
             });
         }
