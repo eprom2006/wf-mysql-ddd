@@ -86,7 +86,7 @@ var ddd = {
                         });
                     }
                 } else {
-                    console.log({err,result,fields});
+                    //console.log({err,result,fields});
                     p.callback(
                         500, err);
                 }
