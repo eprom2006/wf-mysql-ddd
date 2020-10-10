@@ -107,7 +107,7 @@ var ddd = {
                 data: p.data,
                 token: p.token,
                 callback: function(err, data) {
-                    if (callback) callback(err, data);
+                    // if (callback) callback(err, data);
                     if (err) reject(err, data)
                     else resolve(data)
                 }
