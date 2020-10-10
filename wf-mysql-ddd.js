@@ -95,14 +95,23 @@ var ddd = {
     },
 
     execPromise: function(p) {
-        let callback = p.callback;
+        // let callback = p.callback;
         return new Promise((resolve, reject) => {
-            p.callback = function(err, data) {
-                if (callback) callback(err, data);
-                if (err) reject(err, data)
-                else resolve(data)
-            }
-            ddd.exec(p);
+            // p.callback = function(err, data) {
+            //     if (callback) callback(err, data);
+            //     if (err) reject(err, data)
+            //     else resolve(data)
+            // }
+            ddd.exec({
+                sp: p.sp,
+                data: p.data,
+                token: p.token,
+                callback: function(err, data) {
+                    if (callback) callback(err, data);
+                    if (err) reject(err, data)
+                    else resolve(data)
+                }
+            });
         })
     },
 
