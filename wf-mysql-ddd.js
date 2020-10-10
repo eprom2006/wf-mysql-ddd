@@ -93,6 +93,19 @@ var ddd = {
             });
         }
     },
+
+    execPromise: function(p) {
+        let callback = p.callback;
+        return new Promise((resolve, reject) => {
+            p.callback = function(err, data) {
+                if (callback) callback(err, data);
+                if (err) reject(err, data)
+                else resolve(data)
+            }
+            ddd.exec(p);
+        })
+    },
+
     exec_sync: async function(p) {
         return await new Promise((resolve, reject) => {
             ddd.whois(p.token)
