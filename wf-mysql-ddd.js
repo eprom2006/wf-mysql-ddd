@@ -149,7 +149,7 @@ var ddd = {
         redis_conn.expire(key, exprieinseconds);
     },
 
-    delete_token: function(strtoken, jdata) {
+    delete_token: function(strtoken) {
         var redis_conn = verify_redis_conn();
         redis_conn.delete("token:" + strtoken);
     },

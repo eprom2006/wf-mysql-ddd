@@ -85,14 +85,32 @@ ddd.exec({
 });
 ```
 ### execPromise
-```
+```javascript
+ddd.execPromise({
+    sp:'ddd_stored_procedure_name',
+    data:{yourdata:''}
+    }).then(data => {
+        console.log(data)
+    }).catch(error => {
+        console.log(error)
+    });
 ```
 
 ### set_token
+```javascript
+ddd.set_token(userdata,token);
+
+```
 ### set_expire
+```javascript
+ddd.set_expire(token,timeoutseconds);
+
+```
 
 ### delete_token
-
+```javascript
+ddd.deletec_token(token);
+```
 ### whois
 
 ###
