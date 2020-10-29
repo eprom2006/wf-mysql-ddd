@@ -1,6 +1,39 @@
 # wf-mysql-ddd
 
 
+
+## 工作原理
+```mermaid
+sequenceDiagram
+autonumber
+    participant frontend
+    participant backend
+
+    opt login stage
+    backend->>ddd:set_token(userinfo,token)
+    ddd->>redis:save userinfo with token as key
+    backend->>ddd:set_expire(token)
+    ddd->>redis:set expire time
+    backend->>frontend:set token cookie
+    end
+
+    backend->>ddd:exec({sp,data,token,callback})
+    ddd->>redis:resolve_token(token)
+    redis->>ddd:return userinfo
+    ddd->>mysql:query(userinfo,jdata)
+    mysql->>ddd:return jdata
+    ddd->>backend:callback(error,data)
+
+    frontend->>ddd:/api/storedprocedure
+    ddd->>ddd:call exec with token from cookie and data from request
+    ddd->>frontend:result
+
+    opt logout stage
+    backend->>ddd:delete_token(token);
+    ddd->>redis:delete userinfo in redis
+    end
+```
+
 ## 安装wf-mysql-ddd 模块
 
 ### 从gitlab.wf.pub安装最新版本
@@ -121,27 +154,4 @@ ddd.delete_token(token);
 
 前缀带ddd_的存储过程可以从前端调用，不允许外部调用不应该有ddd前缀，从服务器端可以直接用存储过程名调用不对外开放的的ddd存储过程。
 
-## 工作原理
-```mermaid
-sequenceDiagram
-autonumber
-    opt login stage
-    page->>ddd:set_token(userinfo,token)
-    ddd->>redis:save userinfo with token as key
-    page->>ddd:set_expire(token)
-    ddd->>redis:set expire time
-    end
-
-    page->>ddd:exec({sp,data,token,callback})
-    ddd->>redis:resolve_token
-    redis->>ddd:return userinfo
-    ddd->>mysql:query(userinfo,jdata)
-    mysql->>ddd:return jdata
-    ddd->>page:callback(error,data)
-
-    opt logout stage
-    page->>ddd:delete_token(token);
-    ddd->>redis:delete userinfo in redis
-    end
-```
 
