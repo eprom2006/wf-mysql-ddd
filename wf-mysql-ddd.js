@@ -4,6 +4,9 @@ const mysql = require("mysql");
 const redis = require('redis');
 const md5 = require('md5');
 
+let auth_token = "token";
+let token_prefix = "token:";
+
 function key(token) {
     return 'token:'.concat(token);
 }
@@ -44,8 +47,7 @@ var ddd = {
     Router: api,
     conn: null,
     redis: null,
-    auth_token: "token",
-    token_prefix: "token:",
+
 
     /**
      * 执行ddd存储过程
@@ -247,6 +249,10 @@ api.get('/', function(req, res) {
     //     }
     // });
 });
+
+api.get('/logincallback', (req, res) => {
+    res.send('logincallback');
+})
 
 
 api.get('/:sp', function(req, res, next) {

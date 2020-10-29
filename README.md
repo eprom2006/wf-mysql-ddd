@@ -1,22 +1,14 @@
-#wf-mysql-ddd
+# wf-mysql-ddd
 
 
-## 使用方法
+## 安装wf-mysql-ddd 模块
 
-### 安装wf-mysql-ddd 模块
-
-#### 从npmjs安装
-```
+### 从gitlab.wf.pub安装最新版本
 ```shell
-#npm install wf-mysql-ddd
+npm install git+http://gitlab.wf.pub/liwei/wf-mysql-ddd
 ```
 
-#### 从gitlab.wf.pub安装最新版本
-```shell
-npm install git+http://39.98.239.3/liwei/wf-mysql-ddd
-```
-
-### 配置文件config.js
+## 配置文件config.js
 ``` javascript
 
 module.exports={
@@ -37,7 +29,7 @@ module.exports={
 ```
 
 
-### 在app.js添加wf-mysql-ddd的引用配置和路由
+## 在app.js添加wf-mysql-ddd的引用配置和路由
 
 ``` javascript
 
@@ -49,16 +41,16 @@ app.use('/api',ddd.Router);
 
 ```
 
-### 测试api访问
+## 测试api访问
 
 http://xxx/api
 
 
-### 登录cookie
+## 登录cookie
 
-wf-mysql-ddd使用名为token的cookie标识用户身份，你的登录系统在登录后应设置此cookie并将用户身份信息以token_{token_value}为key写入redis，www_mysql_ddd会使用此键解析用户身份信息。
+wf-mysql-ddd使用名为token的cookie标识用户身份，你的登录系统在登录后应设置此cookie并将用户身份信息以token:{token_value}为key写入redis，www_mysql_ddd会使用此键解析用户身份信息。
 
-### 使用wf_mysql_ddd发布服务
+## 使用wf_mysql_ddd发布服务
 
 在mysql数据库中建立名为ddd_{service_name}的存储过程，此存储过程接受两个参数：
 
@@ -66,12 +58,14 @@ wf-mysql-ddd使用名为token的cookie标识用户身份，你的登录系统在
 2. inout jdata json
 
 
-### 从前端调用mysql服务
+## 从前端调用mysql服务
 
 * get http://{userhost}/api/{service_name}
 * post http://{userhost}/api/{service_name}
 
-### 从后端调用mysql服务
+## 从后端调用mysql服务
+
+### exec
 ```javascript
 ddd.exec({
     sp:ddd_{service_name},
@@ -90,6 +84,20 @@ ddd.exec({
     },
 });
 ```
+### execPromise
+```
+```
+
+### set_token
+### set_expire
+
+### delete_token
+
+### whois
+
+###
+
+
 
 ### 注意事项：
 
