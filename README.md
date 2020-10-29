@@ -17,17 +17,20 @@ autonumber
     backend->>frontend:set token cookie
     end
 
+    opt call from backend
     backend->>ddd:exec({sp,data,token,callback})
     ddd->>redis:resolve_token(token)
     redis->>ddd:return userinfo
     ddd->>mysql:query(userinfo,jdata)
     mysql->>ddd:return jdata
     ddd->>backend:callback(error,data)
+    end
 
+    opt call from frontend
     frontend->>ddd:/api/storedprocedure
     ddd->>ddd:call exec with token from cookie and data from request
     ddd->>frontend:result
-
+    end 
     opt logout stage
     backend->>ddd:delete_token(token);
     ddd->>redis:delete userinfo in redis
