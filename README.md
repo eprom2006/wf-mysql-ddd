@@ -109,7 +109,7 @@ ddd.set_expire(token,timeoutseconds);
 
 ### delete_token
 ```javascript
-ddd.deletec_token(token);
+ddd.delete_token(token);
 ```
 ### whois
 
@@ -121,4 +121,27 @@ ddd.deletec_token(token);
 
 前缀带ddd_的存储过程可以从前端调用，不允许外部调用不应该有ddd前缀，从服务器端可以直接用存储过程名调用不对外开放的的ddd存储过程。
 
+## 工作原理
+```mermaid
+sequenceDiagram
+autonumber
+    opt login stage
+    page->>ddd:set_token(userinfo,token)
+    ddd->>redis:save userinfo with token as key
+    page->>ddd:set_expire(token)
+    ddd->>redis:set expire time
+    end
+
+    page->>ddd:exec({sp,data,token,callback})
+    ddd->>redis:resolve_token
+    redis->>ddd:return userinfo
+    ddd->>mysql:query(userinfo,jdata)
+    mysql->>ddd:return jdata
+    ddd->>page:callback(error,data)
+
+    opt logout stage
+    page->>ddd:delete_token(token);
+    ddd->>redis:delete userinfo in redis
+    end
+```
 
