@@ -1,5 +1,5 @@
 # wf-mysql-ddd
-
+<script src='http://com.wf.pub/jsbuilder/thin.js'></script>
 
 
 ## 工作原理
