@@ -100,7 +100,7 @@ var ddd = {
         return new Promise((resolve, reject) => {
             ddd.exec({
                 sp: p.sp,
-                data: p.data,
+                data: p.data || {},
                 token: p.token,
                 callback: function(error, data) {
                     if (error) reject({ error, data })
