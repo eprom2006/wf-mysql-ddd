@@ -56,7 +56,7 @@ var ddd = {
     exec: function(p) {
         ddd.token_resolve(p.token, (err, jtoken) => {
             if (!err && jtoken) {
-                do_query(jtoken, p.data);
+                do_query(jtoken, p.data || {});
             } else {
                 p.callback(403, {
                     err_code: 4,
