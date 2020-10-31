@@ -237,12 +237,11 @@ var ddd = {
     },
 
     login: function(appconfig, userinfowriter) {
-        let login = require('express');
-        login.get('/login', (req, res) => { res.json('login') });
-        login.get('/logout', (req, res) => { res.json('logout') });
-        login.get('/logincallback', (req, res) => { res.json('logincallback') });
-        login.get('/logoutcallback', (req, res) => { res.json('logoutcallback') });
-        return login;
+        let router = require('express').Router();
+        router.get('/login', (req, res) => { res.json('login') });
+        router.get('/logincallback', (req, res) => { res.json('logincallback') });
+        router.get('/logoutcallback', (req, res) => { res.json('logoutcallback') });
+        return router;
     }
 };
 
