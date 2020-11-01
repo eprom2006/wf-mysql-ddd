@@ -194,12 +194,21 @@ autonumber
     participant b as browser
     participant d as ddd login
     participant w as wf.pub
-    participant m as wanfangdata.com.cn
 
-    b->>d:login
-    d->>w:oauth.wf.pub/authorize
-    w->>d:logincallback
-    d-->>w:userinfo
+    b->>d:/login
+    d->>w:https://oauth.wf.pub/authorize
+    w->>d:/logincallback
+    d-->>w:https://oauth.wf.pub/token
+    w-->>d:token
+    d-->>w:https://oauth.wf.pub/api/userinfo
+    w-->>d:userinfo
+    d-->>d:set token cookie and save userinfo in redis
+    alt logincallback undefined
+    d->>b:redirect to return_url
+    else logincallback defined
+    d-->>d: call logincallback to do something
+    d->>b:redirect by yourself
+    end 
 
 ```
 
@@ -210,3 +219,18 @@ autonumber
 /logout?return_url=/xxx
 ```
 return_url未填写时会自动使用req.headers.referer 
+
+```mermaid
+sequenceDiagram
+autonumber
+    participant b as browser
+    participant d as ddd login
+    participant w as wf.pub
+
+    b->>d:/logout
+    d->>w:https://oauth.wf.pub/logout
+    w->>d:/logoutcallback
+    d-->>d:clear token cookie and delete userinfo from redis
+    d->>b:redirect to return_url
+
+```
