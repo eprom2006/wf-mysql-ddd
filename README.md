@@ -234,3 +234,11 @@ autonumber
     d->>b:redirect to return_url
 
 ```
+
+## 开发自定义登录
+
+如果需要使用wf.pub集成登录，可以自行开发登录模块。
+
+
+
+
