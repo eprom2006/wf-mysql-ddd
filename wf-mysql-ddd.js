@@ -2,15 +2,14 @@ var express = require('express');
 var api = express.Router();
 const mysql = require("mysql");
 const redis = require('redis');
+const axios = require('axios');
 const md5 = require('md5');
+const url = require('url');
 
-let auth_token = "token";
-let token_prefix = "token:";
 
-function key(token) {
-    return 'token:'.concat(token);
+function tokencookie() {
+    return (global.logincookie || '') + 'token';
 }
-
 // 确认redis连接是否建立，没有则创建。
 function verify_redis_conn() {
     //检查redis client是否创建
@@ -45,6 +44,7 @@ async function do_quey_sync(p) {
 
 var ddd = {
     Router: api,
+    api: api,
     conn: null,
     redis: null,
 
@@ -72,7 +72,6 @@ var ddd = {
                 ddd.conn.multipleStatements = true;
                 global.ddd_mysql_pool = mysql.createPool(ddd.conn);
             }
-
             // console.log({ pos: "do_query", token: token, jdata: jdata });
             let cmd = 'select ?,? into @token,@jdata;call ' + p.sp + '(@token,@jdata);select @jdata as jdata;';
             global.ddd_mysql_pool.query(cmd, [token, JSON.stringify(jdata)], function(err, result, fields) {
@@ -103,6 +102,7 @@ var ddd = {
                 data: p.data || {},
                 token: p.token,
                 callback: function(error, data) {
+                    // console.log({ error, data });
                     if (error) reject({ error, data })
                     else resolve(data)
                 }
@@ -131,9 +131,8 @@ var ddd = {
     },
 
     set_token: function(userdata, token) {
-        if (token === undefined) {
+        if (!token) {
             userdata.tokencreatetime = new Date();
-            const md5 = require('md5');
             token = md5(JSON.stringify(userdata));
         }
         var redis_conn = verify_redis_conn();
@@ -151,18 +150,13 @@ var ddd = {
 
     delete_token: function(strtoken) {
         var redis_conn = verify_redis_conn();
-        redis_conn.delete("token:" + strtoken);
+        redis_conn.del("token:" + strtoken);
     },
 
     whois: async function(strtoken) {
         return await new Promise((resolve, reject) => {
             ddd.token_resolve(strtoken, (err, jtoken) => {
                 resolve(jtoken)
-                    // if (err) {
-                    //     reject(undefined);
-                    // } else {
-                    //     resolve(jtoken)
-                    // }
             })
         });
     },
@@ -188,7 +182,6 @@ var ddd = {
         // 获取cache中的token 存在就返回
         cache_jtoken = global.ddd_node_cache.get("token:" + token);
         if (!!cache_jtoken) {
-            console.log("cache get token!");
             callback(null, cache_jtoken);
             return;
         }
@@ -197,12 +190,6 @@ var ddd = {
         var redis_conn = verify_redis_conn();
 
         redis_conn.get("token:" + token, function(err, jtoken) {
-            // if (!err && jtoken) {
-            //     global.ddd_redis_client.expire("token:" + token, 1200); //如果有访问，则自动延长token过期时间20分钟。
-            // }
-
-            // 加载token到cache
-            console.log("redis get token!");
             global.ddd_node_cache.set("token:" + token, jtoken);
             callback(err, jtoken);
         });
@@ -236,16 +223,79 @@ var ddd = {
         });
     },
 
-    login: function(appconfig, userinfowriter) {
+    login: function(appconfig, logincallback) {
+        if (appconfig.logincookie) global.logincookie = appconfig.logincookie;
         let router = require('express').Router();
+
         router.get('/login', (req, res) => {
-            res.json({ req });
+            let orgin_url = req.query.return_url || req.headers.referer || '/';
+            let redirect_uri = appconfig.app_url + '/logincallback?return_url=' + encodeURIComponent(orgin_url);
+            res.redirect(`https://oauth.wf.pub/authorize?client_id=${appconfig.client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=read_userinfo`)
         });
-        router.get('/logout', (req, res) => { res.json('logout') });
-        router.get('/logincallback', (req, res) => { res.json('logincallback') });
-        router.get('/logoutcallback', (req, res) => { res.json('logoutcallback') });
+
+        router.get('/logincallback', (req, res) => {
+            let result = {};
+            // code换token
+            axios.get('https://oauth.wf.pub/token', {
+                params: {
+                    grant_type: 'authorization_code',
+                    client_id: appconfig.client_id,
+                    code: req.query.code
+                }
+            }).then(response => {
+                result.token = response.data;
+                //用token取用户信息
+                return axios.get('https://oauth.wf.pub/api/userinfo', {
+                    params: {
+                        token: result.token.access_token
+                    }
+                });
+            }).then(response => {
+                result.userinfo = response.data;
+                // 用户信息进redis
+                let token = ddd.set_token(result.userinfo);
+                // 设置登录cookie
+                res.cookie(tokencookie(), token, {
+                    maxAge: 24 * 3600 * 1000, //过期时间1天
+                    // domain: u.hostname,
+                    // path: u.path,
+                    sameSite: 'LAX',
+                })
+                ddd.set_expire(token, 24 * 3600) //过期时间1天
+
+                if (logincallback) {
+                    logincallback(result, req, res);
+                    //res.redirect(req.query.return_url);
+                } else { res.redirect(req.query.return_url); }
+            }).catch(error => {
+                console.log(error);
+                res.json(error);
+            });
+        });
+
+        router.get('/logout', (req, res) => {
+            ddd.delete_token(req.cookies[tokencookie()]);
+            res.clearCookie(tokencookie());
+            let orgin_url = req.query.return_url || req.headers.referer || '/';
+            res.redirect(orgin_url);
+            // let redirect_uri = appconfig.app_url + '/logoutcallback?return_url=' + encodeURIComponent(orgin_url);
+            // res.redirect(`https://oauth.wf.pub/logout?redirect_uri=${redirect_uri}`)
+        });
+        router.get('/logoutcallback', (req, res) => {
+            res.redirect(req.query.return_url);
+        });
+
+        router.all('*', async(req, res, next) => {
+            let token = req.cookies[tokencookie()];
+            if (token) {
+                res.locals.user = JSON.parse(await ddd.whois(token));
+            }
+            return next();
+        });
+
         return router;
-    }
+    },
+
 };
 
 
@@ -265,12 +315,16 @@ api.get('/logincallback', (req, res) => {
     res.send('logincallback');
 })
 
+api.get('/whoami', async(req, res) => {
+    let token = await ddd.whois(req.cookies[tokencookie()]);
+    res.json(JSON.parse(token));
+})
 
 api.get('/:sp', function(req, res, next) {
     //console.log(req.cookies["token"]);
     ddd.exec({
         sp: "ddd_" + req.params.sp,
-        token: req.cookies["token"],
+        token: req.cookies[tokencookie()],
         data: req.query,
         callback: function(err, r) {
             if (err) {
@@ -285,7 +339,7 @@ api.get('/:sp', function(req, res, next) {
 }).post('/:sp', function(req, res, next) {
     ddd.exec({
         sp: "ddd_" + req.params.sp,
-        token: req.cookies["token"],
+        token: req.cookies[tokencookie()],
         data: req.body,
         callback: function(err, r) {
             //sample callback begin
