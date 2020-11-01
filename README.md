@@ -69,11 +69,12 @@ module.exports={
 
 ``` javascript
 
-var ddd = require('wf-mysql-ddd');
-var config=require('.\config');
-ddd.conn=config.mysql;
-ddd.redis=config.redis;
-app.use('/api',ddd.Router);
+let ddd = require('./wf-mysql-ddd');
+let config = require('./config.js');
+ddd.conn = config.conn;
+ddd.redis = config.redis;
+app.use(ddd.login(config.wfpub, require('./lib/logincallback'))); //wfpub登录集成,必须放在index路由前面；
+app.use('/api', ddd.api);
 
 ```
 
@@ -157,4 +158,55 @@ ddd.delete_token(token);
 
 前缀带ddd_的存储过程可以从前端调用，不允许外部调用不应该有ddd前缀，从服务器端可以直接用存储过程名调用不对外开放的的ddd存储过程。
 
+## wfpub登录集成
 
+
+```javascript
+app.use(ddd.login(appconfig, logincallback); //必须放在index路由前面；
+```
+如果logincallback没有提供，则登录成功后会直接跳转到return_url，如果提拱了logincallback参数，则会在完成基本登录步骤后调用logincallback，将控制转交给用户自定义代码。
+
+### appconfig
+
+```javascript
+    {
+        client_id: 42,                  //应用id，请到wf.pub/open注册
+        app_url: 'https://l.wf.pub',    //网站的url，与开放平台填写的一致。
+        cookieprefix: 'l.wf.pub.'       //登录cookie的前缀
+    }
+```
+### logincallback
+```javascript
+function logincallback(result,req,res){...}
+```
+
+### login
+
+浏览器导航到
+```
+/login?return_url=/xxx
+```
+return_url未填写时会自动使用req.headers.referer 
+
+```mermaid
+sequenceDiagram
+autonumber
+    participant b as browser
+    participant d as ddd login
+    participant w as wf.pub
+    participant m as wanfangdata.com.cn
+
+    b->>d:login
+    d->>w:oauth.wf.pub/authorize
+    w->>d:logincallback
+    d-->>w:userinfo
+
+```
+
+### logout
+
+浏览器导航到
+```
+/logout?return_url=/xxx
+```
+return_url未填写时会自动使用req.headers.referer 
