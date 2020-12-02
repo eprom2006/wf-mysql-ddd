@@ -215,9 +215,9 @@ var ddd = {
                 }
             } else {
                 p.callback({
-                    errno: err.errno,
+                    err_code: err.errno,
                     sqlState: err.sqlState,
-                    sqlMessage: err.sqlMessage
+                    err_message: err.sqlMessage
                 });
             }
         });
