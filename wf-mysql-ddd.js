@@ -235,13 +235,13 @@ var ddd = {
         router.get('/login', (req, res) => {
             let orgin_url = req.query.return_url || req.headers.referer || '/';
             let redirect_uri = appconfig.app_url + '/logincallback?return_url=' + encodeURIComponent(orgin_url);
-            res.redirect(`https://oauth.wf.pub/authorize?client_id=${appconfig.client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=read_userinfo`)
+            res.redirect(`https://wf.pub/oauth/authorize?client_id=${appconfig.client_id}&redirect_uri=${redirect_uri}&response_type=code`)
         });
 
         router.get('/logincallback', (req, res) => {
             let result = {};
             // code换token
-            axios.get('https://oauth.wf.pub/token', {
+            axios.post('https://wf.pub/oauth/token', {
                 params: {
                     grant_type: 'authorization_code',
                     client_id: appconfig.client_id,
@@ -250,7 +250,7 @@ var ddd = {
             }).then(response => {
                 result.token = response.data;
                 //用token取用户信息
-                return axios.get('https://oauth.wf.pub/api/userinfo', {
+                return axios.get('https://wf.pub/oauth/api/userinfo', {
                     params: {
                         token: result.token.access_token
                     }
