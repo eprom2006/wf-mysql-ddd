@@ -241,13 +241,13 @@ var ddd = {
         router.get('/logincallback', (req, res) => {
             let result = {};
             // code换token
-            axios.post('https://wf.pub/oauth/token', {
-                data: qs.stringify({
+            axios.post('https://wf.pub/oauth/token', 
+                qs.stringify({
                     grant_type: 'authorization_code',
                     client_id: appconfig.client_id,
                     code: req.query.code
                 })
-            }).then(response => {
+            ).then(response => {
                 result.token = response.data;
                 //用token取用户信息
                 return axios.get('https://wf.pub/oauth/api/userinfo', {
