@@ -242,7 +242,7 @@ var ddd = {
             let result = {};
             // code换token
             axios.post('https://wf.pub/oauth/token', {
-                params: {
+                data: {
                     grant_type: 'authorization_code',
                     client_id: appconfig.client_id,
                     code: req.query.code
