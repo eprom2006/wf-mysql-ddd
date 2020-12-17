@@ -5,7 +5,7 @@ const redis = require('redis');
 const axios = require('axios');
 const md5 = require('md5');
 const url = require('url');
-
+const qs = require('querystring');
 
 function tokencookie() {
     return (global.logincookie || '') + 'token';
@@ -242,11 +242,11 @@ var ddd = {
             let result = {};
             // code换token
             axios.post('https://wf.pub/oauth/token', {
-                data: {
+                data: qs.stringify({
                     grant_type: 'authorization_code',
                     client_id: appconfig.client_id,
                     code: req.query.code
-                }
+                })
             }).then(response => {
                 result.token = response.data;
                 //用token取用户信息
