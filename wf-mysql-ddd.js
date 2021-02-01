@@ -240,8 +240,9 @@ var ddd = {
 
         router.get('/logincallback', (req, res) => {
             let result = {};
+            let oauthURL=appconfig.oauthURL?appconfig.oauthURL:'https://wf.pub';
             // code换token
-            axios.post('https://wf.pub/oauth/token', 
+            axios.post(oauthURL+'/oauth/token', 
                 qs.stringify({
                     grant_type: 'authorization_code',
                     client_id: appconfig.client_id,
@@ -250,7 +251,7 @@ var ddd = {
             ).then(response => {
                 result.token = response.data;
                 //用token取用户信息
-                return axios.get('https://wf.pub/oauth/api/userinfo', {
+                return axios.get(oauthURL+'/oauth/api/userinfo', {
                     params: {
                         token: result.token.access_token
                     }
