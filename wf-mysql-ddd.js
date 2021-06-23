@@ -261,12 +261,13 @@ var ddd = {
                 // 用户信息进redis
                 let token = ddd.set_token(result.userinfo);
                 // 设置登录cookie
-                res.cookie(tokencookie(), token, {
-                    maxAge: 24 * 3600 * 1000, //过期时间1天
-                    // domain: u.hostname,
-                    // path: u.path,
-                    sameSite: 'LAX',
-                })
+                    res.cookie(tokencookie(), token, {
+                        maxAge: 24 * 3600 * 1000, //过期时间1天
+                        // domain: u.hostname,
+                        // path: u.path,
+                        sameSite: 'None',
+                        secure: true
+                    });
                 ddd.set_expire(token, 24 * 3600) //过期时间1天
 
                 if (logincallback) {
