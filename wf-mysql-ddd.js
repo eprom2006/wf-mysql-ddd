@@ -47,6 +47,7 @@ var ddd = {
     api: api,
     conn: null,
     redis: null,
+    apierr:null,
 
 
     /**
@@ -335,6 +336,12 @@ api.get('/:sp', function(req, res, next) {
         data: req.query,
         callback: function(err, r) {
             if (err) {
+            	if (!!ddd.apierr) {
+                    console.log({ err: err, r: r });
+                    res.render(ddd.apierr, { error: { status: "errno", message: "message" } });
+                    return;
+                }
+                
                 res.status(err);
                 res.send(r);
             } else {
@@ -351,10 +358,12 @@ api.get('/:sp', function(req, res, next) {
         callback: function(err, r) {
             //sample callback begin
             if (err) {
-                console.log({
-                    err: err,
-                    r: r
-                })
+                if (!!ddd.apierr) {
+                    console.log({ err: err, r: r });
+                    res.render(ddd.apierr, { error: { status: "errno", message: "message" } });
+                    return;
+                }
+                
                 res.set('content-type', 'application/json');
                 res.status(err);
                 res.send(JSON.stringify(r));
