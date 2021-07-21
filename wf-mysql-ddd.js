@@ -222,8 +222,8 @@ var ddd = {
             } else {
                 p.callback({
                     errno: err.errno,
-                    sqlState: err.sqlState,
-                    sqlMessage: err.sqlMessage
+                    dddState: err.sqlState,
+                    dddMessage: err.sqlMessage
                 });
             }
         });
