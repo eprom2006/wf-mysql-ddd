@@ -92,7 +92,7 @@ var ddd = {
                     p.callback(
                         500, {
                             err_code: err.errno,
-                            sqlState: err.sqlState,
+                            dddState: err.sqlState,
                             err_message: err.sqlMessage,
                             sql_err: err
                         });
@@ -223,7 +223,7 @@ var ddd = {
                 p.callback({
                     errno: err.errno,
                     dddState: err.sqlState,
-                    dddMessage: err.sqlMessage
+                    sqlMessage: err.sqlMessage
                 });
             }
         });
